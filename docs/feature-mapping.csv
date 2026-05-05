@@ -1,0 +1,13 @@
+Feature,Levels.fyi,6figr,AmbitionBox,Glassdoor,Build?
+Standardized levels (L3/L4/L5),Strong,Medium,Weak,Weak,YES
+Base/Bonus/Stock split,Strong,Strong,Medium,Medium,YES
+Total compensation first-class,Strong,Strong,Medium,Medium,YES
+Server-side filters (company/role/level/location),Strong,Medium,Medium,Medium,YES
+Company median compensation,Medium,Medium,Weak,Weak,YES
+Level distribution by company,Medium,Weak,Weak,Weak,YES
+Structured ingestion API,Strong,Medium,Weak,Weak,YES
+Duplicate prevention,Unknown,Unknown,Unknown,Unknown,YES
+Two-salary compare endpoint,Medium,Medium,Weak,Weak,YES
+Auth system,Present,Present,Present,Present,NO
+Reviews/community,Present,Present,Strong,Strong,NO
+Chat/assistant features,Varies,Varies,Varies,Varies,NO
