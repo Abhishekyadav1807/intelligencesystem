@@ -1,7 +1,7 @@
-# Compensation Intelligence System (MERN, JavaScript Only)
+# Compensation Intelligence System (MERN Frontend + Prisma/PostgreSQL Backend)
 
 ## Stack
-- MongoDB + Mongoose
+- PostgreSQL + Prisma
 - Express.js
 - React + Vite + Tailwind CSS
 - Node.js
@@ -10,9 +10,11 @@
 ### Backend
 1. `cd backend`
 2. Copy `.env.example` -> `.env`
-3. Set `MONGODB_URI`
+3. Set `DATABASE_URL`
 4. `npm install`
-5. `npm run dev`
+5. `npm run prisma:generate`
+6. `npm run prisma:migrate`
+7. `npm run dev`
 
 ### Frontend
 1. `cd frontend`
@@ -33,8 +35,6 @@
   "company": "Google ",
   "role": "Software Engineer",
   "level_standardized": "L4",
-  "location": "Bengaluru",
-  "experience_years": 4,
   "base_salary": 3200000,
   "bonus": 400000,
   "stock": 1200000,
@@ -42,13 +42,17 @@
 }
 ```
 
+Notes:
+- `location` and `experience_years` are accepted as optional fields.
+- If omitted, defaults are `location="unknown"` and `experience_years=0`.
+
 ## Rules Implemented
 - Company normalization (`trim().toLowerCase()`)
 - Level strictness (`L3 | L4 | L5`)
 - Missing `bonus`/`stock` -> `0`
 - `total_compensation = base + bonus + stock`
 - Invalid numeric payload rejection
-- Duplicate prevention via unique compound index
+- Duplicate prevention via unique composite constraint
 
 ## Reverse Engineering Deliverables
 - `docs/phase1-analysis.md`
@@ -56,20 +60,9 @@
 
 ## Deployment (Submission Ready)
 ### Backend on Render
-- `render.yaml` is included at repo root
-- Create a new Render Web Service from this repo
-- Set environment variable `MONGODB_URI`
-- Start command: `npm start`
+- `render.yaml` included at repo root
+- Set `DATABASE_URL` in Render env vars
 
 ### Frontend on Vercel
-- `frontend/vercel.json` is included
-- Import `frontend` as project root in Vercel
-- Set `VITE_API_BASE_URL` to your Render backend URL + `/api`
-
-## Quick Publish Commands
-```bash
-git add .
-git commit -m "Build compensation intelligence system (MERN JS)"
-git remote add origin <your-repo-url>
-git push -u origin main
-```
+- `frontend/vercel.json` included
+- Set `VITE_API_BASE_URL` to Render backend URL + `/api`

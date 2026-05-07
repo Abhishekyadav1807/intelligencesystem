@@ -1,6 +1,6 @@
 import express from "express";
 import { z } from "zod";
-import { Salary } from "../models/Salary.js";
+import { prisma } from "../config/db.js";
 import { ingestSchema } from "../validators/salary.js";
 import { normalizeCompany, normalizeLevel } from "../utils/normalize.js";
 
@@ -23,22 +23,24 @@ router.post("/ingest-salary", async (req, res) => {
   const total_compensation = payload.base_salary + (payload.bonus ?? 0) + (payload.stock ?? 0);
 
   try {
-    const doc = await Salary.create({
-      company,
-      role: payload.role.trim(),
-      level,
-      location: payload.location.trim(),
-      experience_years: payload.experience_years,
-      base_salary: payload.base_salary,
-      bonus: payload.bonus ?? 0,
-      stock: payload.stock ?? 0,
-      total_compensation,
-      confidence_score: payload.confidence
+    const created = await prisma.salary.create({
+      data: {
+        company,
+        role: payload.role.trim(),
+        level,
+        location: payload.location.trim(),
+        experience_years: payload.experience_years,
+        base_salary: payload.base_salary,
+        bonus: payload.bonus ?? 0,
+        stock: payload.stock ?? 0,
+        total_compensation,
+        confidence_score: payload.confidence
+      }
     });
 
-    return res.status(201).json(doc);
+    return res.status(201).json(created);
   } catch (error) {
-    if (error?.code === 11000) {
+    if (error.code === "P2002") {
       return res.status(409).json({ message: "Duplicate salary entry" });
     }
     return res.status(500).json({ message: "Failed to ingest salary" });
@@ -46,20 +48,23 @@ router.post("/ingest-salary", async (req, res) => {
 });
 
 router.get("/salaries", async (req, res) => {
-  const filters = {};
-  if (req.query.company) filters.company = normalizeCompany(String(req.query.company));
-  if (req.query.role) filters.role = String(req.query.role).trim();
-  if (req.query.level) filters.level = normalizeLevel(String(req.query.level));
-  if (req.query.location) filters.location = String(req.query.location).trim();
+  const where = {};
+  if (req.query.company) where.company = normalizeCompany(String(req.query.company));
+  if (req.query.role) where.role = String(req.query.role).trim();
+  if (req.query.level) where.level = normalizeLevel(String(req.query.level));
+  if (req.query.location) where.location = String(req.query.location).trim();
 
-  const sort = req.query.sort === "asc" ? 1 : -1;
-  const data = await Salary.find(filters).sort({ total_compensation: sort, created_at: -1 });
-  res.json(data);
+  const orderBy = { total_compensation: req.query.sort === "asc" ? "asc" : "desc" };
+  const rows = await prisma.salary.findMany({ where, orderBy });
+  res.json(rows);
 });
 
 router.get("/company/:company", async (req, res) => {
   const company = normalizeCompany(req.params.company);
-  const salaries = await Salary.find({ company }).sort({ total_compensation: -1 });
+  const salaries = await prisma.salary.findMany({
+    where: { company },
+    orderBy: { total_compensation: "desc" }
+  });
 
   if (!salaries.length) {
     return res.status(404).json({ message: "Company not found" });
@@ -82,12 +87,16 @@ router.get("/company/:company", async (req, res) => {
 router.get("/compare", async (req, res) => {
   const compareSchema = z.object({ salaryId1: z.string().min(1), salaryId2: z.string().min(1) });
   const parsed = compareSchema.safeParse(req.query);
+
   if (!parsed.success) {
     return res.status(400).json({ message: "salaryId1 and salaryId2 are required" });
   }
 
   const { salaryId1, salaryId2 } = parsed.data;
-  const [s1, s2] = await Promise.all([Salary.findById(salaryId1), Salary.findById(salaryId2)]);
+  const [s1, s2] = await Promise.all([
+    prisma.salary.findUnique({ where: { id: salaryId1 } }),
+    prisma.salary.findUnique({ where: { id: salaryId2 } })
+  ]);
 
   if (!s1 || !s2) {
     return res.status(404).json({ message: "One or both salary records not found" });

@@ -1,5 +1,3 @@
-import mongoose from "mongoose";
+import { PrismaClient } from "@prisma/client";
 
-export const connectDb = async (uri) => {
-  await mongoose.connect(uri);
-};
+export const prisma = new PrismaClient();

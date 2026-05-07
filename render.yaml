@@ -4,12 +4,12 @@ services:
     env: node
     rootDir: backend
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: npm install && npm run prisma:generate
+    startCommand: npm run prisma:deploy && npm start
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: MONGODB_URI
+      - key: DATABASE_URL
         sync: false
       - key: PORT
         value: 5000
